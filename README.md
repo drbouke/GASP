@@ -2,12 +2,10 @@
 
 Reproducible code for the paper **Detecting Hallucinations in Retrieval-Augmented Generation through Grounding-Aware Sensitivity by Perturbation (GASP)** (Bouke, 2026).
 
-<!-- Uncomment and fill once the preprint is public (replace XXXX.XXXXX):
-[![arXiv](https://img.shields.io/badge/arXiv-XXXX.XXXXX-b31b1b.svg)](https://arxiv.org/abs/XXXX.XXXXX)
-[![DOI](https://img.shields.io/badge/DOI-10.48550%2FarXiv.XXXX.XXXXX-blue.svg)](https://doi.org/10.48550/arXiv.XXXX.XXXXX)
--->
+[![arXiv](https://img.shields.io/badge/arXiv-2607.04223-b31b1b.svg)](https://arxiv.org/abs/2607.04223)
+[![DOI](https://img.shields.io/badge/DOI-10.48550%2FarXiv.2607.04223-blue.svg)](https://doi.org/10.48550/arXiv.2607.04223)
 
-**Paper:** preprint link to be added.
+**Paper:** [arXiv:2607.04223](https://arxiv.org/abs/2607.04223) | **DOI:** [10.48550/arXiv.2607.04223](https://doi.org/10.48550/arXiv.2607.04223)
 
 GASP is a span-level detector for hallucination in retrieval-augmented generation. It scores each answer sentence by how much its likelihood depends on the retrieved evidence, re-scoring a fixed answer under the full context, under no context, and under leave-one-context-out perturbations, then reading the resulting log-likelihood drops and Jensen-Shannon divergences. A grounded sentence reacts strongly when its evidence is removed; a hallucinated one barely reacts. The default detector is a training-free threshold on the standardized features; a gradient-boosted (LightGBM) classifier is provided for comparison.
 
@@ -141,13 +139,14 @@ All outputs are written to `results/figures/` (PNGs) and `results/` (CSVs and Ma
 ## Citation
 
 ```bibtex
-@misc{bouke2026gasp,
-      title={Detecting Hallucinations in Retrieval-Augmented Generation through Grounding-Aware Sensitivity by Perturbation},
+@misc{bouke2026detectinghallucinationsretrievalaugmentedgeneration,
+      title={Detecting Hallucinations in Retrieval-Augmented Generation through Grounding-Aware Sensitivity by Perturbation (GASP)},
       author={Mohamed Aly Bouke},
       year={2026},
-      eprint={XXXX.XXXXX},
+      eprint={2607.04223},
       archivePrefix={arXiv},
       primaryClass={cs.CL},
-      note={Preprint. arXiv identifier and DOI to be added.},
+      doi={10.48550/arXiv.2607.04223},
+      url={https://arxiv.org/abs/2607.04223},
 }
 ```
