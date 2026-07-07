@@ -1,0 +1,26 @@
+# Raw datasets (downloaded, not tracked)
+datasets/
+data/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Paper source (LaTeX, PDF, bibliography)
+*.tex
+*.pdf
+*.bib
+figs/
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+
+# HuggingFace / model caches
+.cache/
