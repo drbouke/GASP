@@ -1,152 +1,137 @@
-# GASP: Grounding-Aware Sensitivity by Perturbation
+# GASP
 
-Reproducible code for the paper **Detecting Hallucinations in Retrieval-Augmented Generation through Grounding-Aware Sensitivity by Perturbation (GASP)** (Bouke, 2026).
-
+[![PyPI](https://img.shields.io/pypi/v/gasp-rag.svg)](https://pypi.org/project/gasp-rag/)
+[![Python](https://img.shields.io/pypi/pyversions/gasp-rag.svg)](https://pypi.org/project/gasp-rag/)
 [![arXiv](https://img.shields.io/badge/arXiv-2607.04223-b31b1b.svg)](https://arxiv.org/abs/2607.04223)
-[![DOI](https://img.shields.io/badge/DOI-10.48550%2FarXiv.2607.04223-blue.svg)](https://doi.org/10.48550/arXiv.2607.04223)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Paper:** [arXiv:2607.04223](https://arxiv.org/abs/2607.04223) | **DOI:** [10.48550/arXiv.2607.04223](https://doi.org/10.48550/arXiv.2607.04223)
+**Grounding-Aware Sensitivity by Perturbation** — a span-level detector of ungrounded
+content in retrieval-augmented generation (RAG).
 
-GASP is a span-level detector for hallucination in retrieval-augmented generation. It scores each answer sentence by how much its likelihood depends on the retrieved evidence, re-scoring a fixed answer under the full context, under no context, and under leave-one-context-out perturbations, then reading the resulting log-likelihood drops and Jensen-Shannon divergences. A grounded sentence reacts strongly when its evidence is removed; a hallucinated one barely reacts. The default detector is a training-free threshold on the standardized features; a gradient-boosted (LightGBM) classifier is provided for comparison.
+GASP scores each answer sentence by its *grounding sensitivity*: the change in the
+sentence's likelihood when the retrieved context is perturbed. A grounded sentence loses
+much of its likelihood when its supporting passage is removed; an unsupported sentence
+barely reacts. GASP needs only a probabilistic scorer, no trained verifier and no labeled
+data, and it returns, for each sentence, the chunk that best supports it.
 
----
+This repository is both the installable library (`pip install gasp-rag`) and the code that
+reproduces the paper.
 
-## Repository Layout
+## Install
 
-```
-.
-├── src/                              # Core library modules
-│   ├── config.py                     # Repository paths (results/, figures/)
-│   ├── scorer.py                     # LM K+2 scoring; grounding-sensitivity features
-│   └── analysis.py                   # Feature aggregation, leakage-clean CV, AUC, bootstrap
-│
-├── pipeline/                         # Experiment entry points
-│   ├── experiments/
-│   │   ├── run_threshold.py          # Training-free threshold vs trained classifier (span)
-│   │   ├── run_threshold_resp.py     # Same, response level
-│   │   ├── run_baseline_nli_strong.py    # Whole-context NLI entailment baseline
-│   │   ├── run_baseline_nli_maxchunk.py  # Chunk-level (max-over-chunk) NLI verifier
-│   │   ├── run_selfcheck.py          # SelfCheckGPT-style self-consistency baseline
-│   │   ├── run_pertask.py            # Detection by RAGTruth task type
-│   │   ├── run_truncation.py         # Effect of the context/answer token caps
-│   │   ├── run_explanation.py        # Attribution quality vs NLI/lexical controls
-│   │   ├── run_attractor_estimate.py # Hidden-state correlation-dimension estimate
-│   │   ├── run_attractor_controls.py # Attractor-movement controls
-│   │   ├── run_tofueval_score.py     # Score the TofuEval-MeetingBank benchmark
-│   │   ├── run_tofueval_analyze.py   # TofuEval detection AUC
-│   │   ├── run_ragbench_score.py     # Score the RAGBench scope probe
-│   │   └── run_ragbench_analyze.py   # RAGBench detection AUC
-│   ├── figures/
-│   │   └── run_figures.py            # Response/span AUC bars, ROC, distribution, importances
-│   └── scripts/
-│       └── run_all.py                # Top-level orchestrator (runs all stages)
-│
-├── results/                          # Precomputed outputs (committed)
-│   ├── <model>_K5/                   # Per-scorer feature CSVs (sentence.csv, response.csv)
-│   ├── tofueval_<model>/             # TofuEval feature CSVs
-│   ├── ragbench_<model>/             # RAGBench feature CSVs
-│   ├── *.csv, *.md                   # Result tables and summaries
-│   └── figures/                      # Figure PNGs
-│
-├── requirements.txt
-└── README.md
+```bash
+pip install gasp-rag          # core
+pip install gasp-rag[torch]   # with PyTorch and transformers, needed to run a scorer
 ```
 
----
+## Quickstart
 
-## Datasets
+```python
+from gasp import GASP
 
-The three benchmarks are loaded on demand via the Hugging Face `datasets` library; no raw data is stored in the repository.
+detector = GASP("Qwen/Qwen2.5-1.5B-Instruct", k_chunks=5, threshold=0.5)
 
-| Benchmark | Role | Source |
-|---|---|---|
-| RAGTruth | Primary, span-level | [`wandb/RAGTruth-processed`](https://huggingface.co/datasets/wandb/RAGTruth-processed) |
-| TofuEval (MeetingBank) | Cross-domain transfer | [`amazon-science/tofueval`](https://github.com/amazon-science/tofueval) + [`huuuyeah/meetingbank`](https://huggingface.co/datasets/huuuyeah/meetingbank) |
-| RAGBench | Short-answer QA scope probe | [`rungalileo/ragbench`](https://huggingface.co/datasets/rungalileo/ragbench) |
+result = detector.detect(
+    context="...",   # the retrieved passages, as one string
+    answer="...",    # the generated answer to check
+    query="...",     # the query (optional)
+)
 
-Precomputed feature CSVs are included under `results/`, so the analysis and figure stages can be reproduced without re-scoring on a GPU.
+for s in result:
+    print(f"{s.sensitivity:+.2f}  {s.text}")
+    if s.supporting_chunk:
+        print(f"        supported by: {s.supporting_chunk[:80]}...")
 
----
+for s in result.flagged():
+    print("likely unsupported:", s.text)
+```
 
-## Setup
+Higher sensitivity means the sentence depends more on the retrieved evidence and is more
+likely grounded; lower sensitivity means it barely reacts to removing evidence and is more
+likely unsupported. Thresholds are corpus dependent and best calibrated on held-out data.
+
+## Options
+
+```python
+GASP(
+    model_id,                       # any Hugging Face causal LM, small or large, CPU or GPU
+    k_chunks=5,                     # number of context chunks
+    threshold=None,                 # flag sentences below this sensitivity
+    economical=False,               # two-pass variant: faster, no attribution
+    sensitivity_feature="max_drop", # or "gap", "mean_drop", "top2_drop", "max_jsd"
+    max_ctx_tokens=1800, max_ans_tokens=256,
+    device=None, dtype=None,        # "cpu"/"cuda", "float16"/"bfloat16"/"float32"
+)
+```
+
+## Many answers, files, and the command line
+
+```python
+detections = detector.detect_batch([
+    {"context": ctx1, "answer": ans1, "query": q1},
+    {"context": ctx2, "answer": ans2},
+])
+rows = [r for d in detections for r in d.to_records()]   # ready for pandas
+```
+
+```bash
+# score a file of RAG outputs (jsonl/csv with context, answer, optional query)
+gasp detect --input outputs.jsonl --model Qwen/Qwen2.5-1.5B-Instruct \
+            --k-chunks 5 --threshold 0.5 --output results.jsonl
+
+# metrics on a labeled results file (label 1 = unsupported)
+gasp eval --input labeled.csv --label-col label --score-col sensitivity --threshold 0.5
+```
+
+## How it works
+
+For each answer sentence GASP re-scores the fixed answer under three conditions, the full
+context, no context, and each context chunk removed in turn, and reads the log-likelihood
+drops and Jensen-Shannon divergences at the sentence's tokens. The largest per-chunk drop
+is the sentence's grounding sensitivity, and the chunk that produced it is returned as the
+candidate supporting passage. Every method sees the same character-span chunks and
+sentences, so the segmentation is defined once and never re-tokenized.
+
+## Reproducing the paper
+
+The `pipeline/` directory holds the experiment code and `results/` holds the figures and the
+human-study package.
 
 ```bash
 pip install -r requirements.txt
+# 1. score answers into canonical cases (RAGTruth / TofuEval / RAGBench)
+python pipeline/run_gasp.py --model Qwen/Qwen2.5-14B-Instruct --dataset ragtruth --tag RT
+# 2. run the advanced baselines on the same cases
+python pipeline/run_baselines.py --cases canon_results/RT/cases.jsonl --out baselines_nli.csv
+# 3. the decisive comparison and the complementarity analysis
+python pipeline/compare_baselines.py --gasp canon_results/RT/sentence.csv --baselines *.csv
+python pipeline/integration_analysis.py --gasp canon_results/RT/sentence.csv --baselines *.csv
+# 4. cost panel and figures
+python pipeline/cost_analysis.py --cases canon_results/RT/cases.jsonl
+python pipeline/make_paper_figures.py
 ```
 
-Python 3.10+ recommended. Scoring uses a single CUDA GPU (developed on a 6 GB RTX 3060 Laptop). All random seeds are fixed at `42`.
-
----
-
-## Reproducing All Results
-
-### Run the full pipeline (recommended)
-```bash
-python pipeline/scripts/run_all.py
-```
-This runs all stages in order and writes outputs to `results/` and `results/figures/`. The scoring and GPU stages download the models and benchmarks on first use.
-
-### Run individual stages
-```bash
-# Score the answers on the GPU, one per scorer (writes results/<model>_K5/)
-python src/scorer.py --model Qwen/Qwen2.5-0.5B-Instruct
-python src/scorer.py --model Qwen/Qwen2.5-1.5B-Instruct
-python src/scorer.py --model HuggingFaceTB/SmolLM2-1.7B-Instruct
-
-# RAGTruth detection AUC (response + span, per-type)
-python src/analysis.py
-
-# Training-free threshold vs trained classifier
-python pipeline/experiments/run_threshold.py
-python pipeline/experiments/run_threshold_resp.py
-
-# Baselines (whole-context NLI, chunk-level NLI verifier, self-consistency)
-python pipeline/experiments/run_baseline_nli_strong.py
-python pipeline/experiments/run_baseline_nli_maxchunk.py
-python pipeline/experiments/run_selfcheck.py
-
-# Detection by task type, truncation, attribution quality, attractor evidence
-python pipeline/experiments/run_pertask.py
-python pipeline/experiments/run_truncation.py
-python pipeline/experiments/run_explanation.py
-python pipeline/experiments/run_attractor_estimate.py
-python pipeline/experiments/run_attractor_controls.py
-
-# Cross-domain transfer (TofuEval) and short-answer QA scope probe (RAGBench)
-python pipeline/experiments/run_tofueval_analyze.py
-python pipeline/experiments/run_ragbench_analyze.py
-
-# Figures
-python pipeline/figures/run_figures.py
-```
-
-All outputs are written to `results/figures/` (PNGs) and `results/` (CSVs and Markdown summaries).
-
----
-
-## Key Design Decisions
-
-**Leakage-clean evaluation.** Span-level cross-validation folds are grouped by response with `StratifiedGroupKFold`, so sentences from one answer never appear in both the training and test partitions. See `src/analysis.py`.
-
-**Training-free default.** The recommended detector is a threshold on the negated standardized sum of the four grounding-sensitivity features, needing no labeled data. The LightGBM classifier is reported only for comparison.
-
-**Scorer independent of the generator.** The scoring model needs only to return token likelihoods under a context, so a small model can audit answers from a larger or hosted generator whose internals are unavailable.
-
-**Deterministic scoring.** The answer is never regenerated, so given the model and the seed the features are exactly reproducible; there is no sampling temperature to control.
-
----
+Key findings: GASP beats entailment and attribution baselines and is competitive with the
+per-chunk trained fact-checkers, though a full-context fact-checker and an LLM judge rank spans
+more accurately at higher compute. Adding GASP to a verifier improves the weaker entailment,
+attribution, and per-chunk verifiers but not the strongest full-context fact-checker or the LLM
+judge, whose ranking already reflects it, so GASP is best used as a cheap, training-free
+standalone detector with built-in attribution and as a complement to weaker verifiers. Its
+attribution is validated by a three-annotator human study (see `results/human_study/`).
 
 ## Citation
 
 ```bibtex
-@misc{bouke2026detectinghallucinationsretrievalaugmentedgeneration,
-      title={Detecting Hallucinations in Retrieval-Augmented Generation through Grounding-Aware Sensitivity by Perturbation (GASP)},
-      author={Mohamed Aly Bouke},
-      year={2026},
-      eprint={2607.04223},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL},
-      doi={10.48550/arXiv.2607.04223},
-      url={https://arxiv.org/abs/2607.04223},
+@article{bouke2026gasp,
+  title   = {Detecting Hallucinations in Retrieval-Augmented Generation through
+             Grounding-Aware Sensitivity by Perturbation (GASP)},
+  author  = {Bouke, Mohamed Aly},
+  journal = {arXiv preprint arXiv:2607.04223},
+  year    = {2026},
+  doi     = {10.48550/arXiv.2607.04223}
 }
 ```
+
+## License
+
+MIT. See [LICENSE](LICENSE).

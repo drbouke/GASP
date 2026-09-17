@@ -24,3 +24,16 @@ figs/
 
 # HuggingFace / model caches
 .cache/
+
+# Packaging
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.pypirc
+
+# Heavy experiment outputs and checkpoints (reproducible via pipeline/)
+canon_results/
+rev_results/
+*.ckpt
+*.jsonl
