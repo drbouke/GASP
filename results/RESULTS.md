@@ -46,9 +46,9 @@ by +0.117 [0.082, 0.153] on the 14B scorer.
 
 Per task within RAGTruth (with source-level 95% CIs): question answering 0.800 [0.751, 0.861],
 summarization 0.775 [0.706, 0.837], data-to-text 0.736 [0.697, 0.776]. The intervals overlap, so
-no task is distinguishably strongest, but question answering is at least as strong as the rest —
-so the RAGBench weakness is specific to its short factual answers and heavier truncation, not the
-QA format. Two senses of transfer differ: GASP-threshold is a fixed detector that carries across
+no task is distinguishably strongest, but question answering has the highest point estimate, so
+the RAGBench weakness is specific to its short factual answers and heavier truncation, not the
+question-answering format. Two senses of transfer differ: GASP-threshold is a fixed detector that carries across
 benchmarks unchanged (only its threshold re-calibrated), whereas GASP+base re-fits its classifier
 on each benchmark's own development split.
 
@@ -64,8 +64,8 @@ on each benchmark's own development split.
 | GASP-threshold (training-free) | 0.745 | 0.700 | 0.603 |
 | **GASP+base** | **0.773** | **0.711** | **0.634** |
 
-GASP+base beats chunk-NLI and ContextCite and matches the per-chunk trained verifiers; the
-full-context fact-checker and the LLM judge are more accurate at markedly higher compute. The
+GASP+base beats chunk-NLI and ContextCite and matches the per-chunk trained verifiers; the full-context fact-checker and the LLM judge are more accurate, the judge at far higher compute
+and the fact-checker as a separately trained model that is cheaper than the 14B GASP. The
 training-free GASP-threshold (the single two-pass gap feature) trails GASP+base but still beats
 the entailment and attribution baselines.
 
@@ -102,9 +102,8 @@ a state-of-the-art verifier.
 
 The two-pass GASP-threshold on a 1.5B scorer (~429) is the cheapest configuration, using only the
 full-context and no-context passes. Of the two verifiers that beat GASP+base, the LLM judge
-(~20,376) is far more expensive, but the full-context MiniCheck (~717) is actually cheaper than
-the 14B GASP+base (~4,236) — it trades a separately trained, supervised model for its accuracy,
-not more compute. ContextCite (~26,103) is the most expensive. Read each variant's cost with its
+(~20,376) is far more expensive, but the full-context MiniCheck (~717) is cheaper than the 14B GASP+base (~4,236), since it trades
+a separately trained, supervised model for its accuracy, not more compute. ContextCite (~26,103) is the most expensive. Read each variant's cost with its
 own accuracy; do not pair the small-scorer cost with the larger-scorer accuracy. We report a
 compute estimate, not wall-clock latency.
 
@@ -112,8 +111,10 @@ compute estimate, not wall-clock latency.
 
 Three annotators graded the GASP-attributed chunk for 120 grounded sentences. It was judged
 fully supporting in 58% of cases and fully or partly supporting in 82.5% (Fleiss' kappa 0.86 on
-the four levels, 0.94 supported-vs-not), close to the automatic LLM-judge fully-or-partly rate
-of 88.1%. The study covers grounded, attributed sentences only.
+the four levels, 0.94 supported-vs-not). An automatic LLM judge rated 88.1% of a different sample
+of 556 grounded sentences as fully or partly supported; because the samples differ, these rates do
+not measure the agreement of the automatic judge with the annotators. The study covers grounded,
+attributed sentences only.
 
 ## Truncation audit (1800-token context, 256-token answer caps)
 

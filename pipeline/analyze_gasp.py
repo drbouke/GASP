@@ -111,7 +111,7 @@ def main():
         df = g.agg({**{f: "max" for f in RAW_FEATS}, "source_id": "first", y: "max"}).reset_index()
 
     dev, test = source_split(df, seed=a.seed)
-    print(f"# GASP analysis — {a.csv}  [{a.level}]")
+    print(f"# GASP analysis: {a.csv}  [{a.level}]")
     print(f"dev: {len(dev)} rows / {dev['source_id'].nunique()} sources | "
           f"test: {len(test)} rows / {test['source_id'].nunique()} sources | "
           f"test positives: {int(test[y].sum())}/{len(test)}")

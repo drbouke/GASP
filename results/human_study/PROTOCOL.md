@@ -2,9 +2,9 @@
 
 ## Purpose
 GASP flags each answer sentence and returns, for grounded sentences, the retrieved chunk whose
-removal most lowers the sentence's likelihood as a candidate supporting passage. This study measures
-how often that returned chunk is a genuine supporting passage, judged by human annotators, which the
-paper reports as a direct measure of localization quality alongside the automatic proxy.
+removal most lowers the sentence's likelihood as a candidate supporting passage. This study measures how often that returned chunk supports the sentence, as judged by human
+annotators, and the paper reports it as a direct measure of localization quality alongside the
+automatic grade.
 
 ## Materials
 `attribution_annotation_sheet.csv` holds 120 items sampled from the RAGTruth grounded sentences scored
@@ -34,21 +34,17 @@ not whether the claim is correct in general. Enter exactly one letter in `annota
 - When torn between two grades, choose the lower one.
 
 ## Annotators and quality control
-- Recruit at least three annotators who each grade all 120 items independently.
-- Include the two authors' names in an annotator log; annotators must not confer during grading.
-- Seed 10 hidden check items with an obvious A and an obvious D to catch inattentive grading; exclude
-  an annotator whose check accuracy is below 80 percent.
+- Three annotators each graded all 120 items independently, without conferring.
+- Annotator identities are not released; each annotator's grades are one file in `Reports/`.
 
 ## Analysis
 - Report the percentage of items graded A or B (supported) for the attributed chunk.
-- Report inter-annotator agreement with Krippendorff's alpha on the four-level scale, and the majority
-  grade per item.
-- Compare against the automatic LLM-judge grade in the paper; agreement between the human majority and
-  the automatic grade bounds how far the automatic proxy can stand in for human judgment.
-- A supported rate well above the 1/K random-chunk rate establishes that the returned chunk is a
-  genuine supporting passage rather than an arbitrary one.
+- Report inter-annotator agreement as mean pairwise exact agreement and Fleiss' kappa, on the
+  four-level scale and on the collapsed supported-versus-not distinction, and the majority grade
+  per item (`analyze_annotations.py`).
+- The automatic LLM-judge grade in the paper was computed on a different sample, so the two rates
+  are reported side by side and are not an estimate of their agreement.
 
 ## Reporting
-Fill `annotator_grade` for every item, save one CSV per annotator as
-`annotation_<name>.csv`, and keep the annotator log alongside. The study reports these files, not
-the individual annotators' identities.
+Each annotator filled `annotator_grade` for every item; the three graded sheets are
+`Reports/annotation1.csv` to `annotation3.csv`, released without the annotators' identities.

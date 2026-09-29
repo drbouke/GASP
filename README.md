@@ -5,14 +5,15 @@
 [![arXiv](https://img.shields.io/badge/arXiv-2607.04223-b31b1b.svg)](https://arxiv.org/abs/2607.04223)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Grounding-Aware Sensitivity by Perturbation** — a span-level detector of ungrounded
+**Grounding-Aware Sensitivity by Perturbation** is a span-level detector of ungrounded
 content in retrieval-augmented generation (RAG).
 
 GASP scores each answer sentence by its *grounding sensitivity*: the change in the
-sentence's likelihood when the retrieved context is perturbed. A grounded sentence loses
-much of its likelihood when its supporting passage is removed; an unsupported sentence
-barely reacts. GASP needs only a probabilistic scorer, no trained verifier and no labeled
-data, and it returns, for each sentence, the chunk that best supports it.
+sentence's likelihood when the retrieved context is perturbed. A grounded sentence tends to lose likelihood when its supporting passage is removed, while an
+unsupported sentence tends to change little. The score needs only a probabilistic scorer, with no
+trained verifier and no labels; only the operating threshold is chosen on held-out labeled data.
+For each sentence GASP also returns the chunk whose removal most lowers its likelihood, as a
+candidate supporting passage.
 
 This repository is both the installable library (`pip install gasp-rag`) and the code that
 reproduces the paper.
@@ -87,9 +88,11 @@ gasp eval --input labeled.csv --label-col label --score-col sensitivity --thresh
 
 For each answer sentence GASP re-scores the fixed answer under three conditions, the full
 context, no context, and each context chunk removed in turn, and reads the log-likelihood
-drops and Jensen-Shannon divergences at the sentence's tokens. The largest per-chunk drop
-is the sentence's grounding sensitivity, and the chunk that produced it is returned as the
-candidate supporting passage. Every method sees the same character-span chunks and
+drops and Jensen-Shannon divergences at the sentence's tokens. By default the library reads the largest per-chunk drop (`sensitivity_feature="max_drop"`) and
+returns the chunk that produced it as the candidate supporting passage. The training-free variant
+evaluated in the paper, GASP-threshold, uses the full-versus-no-context gap
+(`sensitivity_feature="gap"`, two passes with `economical=True`), which is the strongest single
+feature in the paper's analysis but returns no supporting passage. Every method sees the same character-span chunks and
 sentences, so the segmentation is defined once and never re-tokenized.
 
 ## Reproducing the paper
@@ -115,9 +118,9 @@ Key findings: GASP beats entailment and attribution baselines and is competitive
 per-chunk trained fact-checkers, though a full-context fact-checker and an LLM judge rank spans
 more accurately at higher compute. Adding GASP to a verifier improves the weaker entailment,
 attribution, and per-chunk verifiers but not the strongest full-context fact-checker or the LLM
-judge, whose ranking already reflects it, so GASP is best used as a cheap, training-free
-standalone detector with built-in attribution and as a complement to weaker verifiers. Its
-attribution is validated by a three-annotator human study (see `results/human_study/`).
+judge, so GASP is best used as a cheap, training-free standalone detector with a candidate
+supporting passage and as a complement to weaker verifiers. The returned passage is assessed by a
+three-annotator human study (see `results/human_study/`).
 
 ## Citation
 
