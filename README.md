@@ -59,7 +59,7 @@ GASP(
     k_chunks=5,                     # number of context chunks
     threshold=None,                 # flag sentences below this sensitivity
     economical=False,               # two-pass variant: faster, no attribution
-    sensitivity_feature="max_drop", # or "gap", "mean_drop", "top2_drop", "max_jsd"
+    sensitivity_feature="gap",      # or "max_drop", "mean_drop", "top2_drop", "max_jsd", "jsd_noctx"
     max_ctx_tokens=1800, max_ans_tokens=256,
     device=None, dtype=None,        # "cpu"/"cuda", "float16"/"bfloat16"/"float32"
 )
@@ -88,11 +88,11 @@ gasp eval --input labeled.csv --label-col label --score-col sensitivity --thresh
 
 For each answer sentence GASP re-scores the fixed answer under three conditions, the full
 context, no context, and each context chunk removed in turn, and reads the log-likelihood
-drops and Jensen-Shannon divergences at the sentence's tokens. By default the library reads the largest per-chunk drop (`sensitivity_feature="max_drop"`) and
-returns the chunk that produced it as the candidate supporting passage. The training-free variant
-evaluated in the paper, GASP-threshold, uses the full-versus-no-context gap
-(`sensitivity_feature="gap"`, two passes with `economical=True`), which is the strongest single
-feature in the paper's analysis but returns no supporting passage. Every method sees the same character-span chunks and
+drops and Jensen-Shannon divergences at the sentence's tokens. The reported sensitivity is by default the full-versus-no-context log-likelihood gap
+(`sensitivity_feature="gap"`), the training-free score evaluated in the paper and the strongest
+single feature in its analysis. The per-chunk passes supply the candidate supporting passage, the
+chunk whose removal most lowers the sentence's likelihood. With `economical=True` only the two
+passes run, so the score is the same but no supporting passage is returned. Every method sees the same character-span chunks and
 sentences, so the segmentation is defined once and never re-tokenized.
 
 ## Reproducing the paper

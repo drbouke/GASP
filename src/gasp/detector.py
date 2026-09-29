@@ -82,9 +82,12 @@ class GASP:
     economical:
         If True, run only the full-context and no-context passes (the two-pass variant),
         which is much faster but provides no per-chunk attribution.
-    sensitivity_feature:
-        Which grounding feature to report as ``sensitivity`` (default ``max_drop``; use
-        ``gap`` with ``economical=True``).
+        sensitivity_feature:
+        Which grounding feature to report as ``sensitivity``. The default ``gap`` is the
+        full-versus-no-context log-likelihood gap, the training-free score evaluated in
+        the paper; the per-chunk passes still run unless ``economical=True`` and supply
+        the supporting chunk. With ``economical=True`` only ``gap`` and ``jsd_noctx`` are
+        available.
     max_ctx_tokens, max_ans_tokens, device, dtype:
         Passed to the underlying scorer.
 
@@ -103,7 +106,7 @@ class GASP:
         k_chunks: int = 5,
         threshold: Optional[float] = None,
         economical: bool = False,
-        sensitivity_feature: str = "max_drop",
+        sensitivity_feature: str = "gap",
         **scorer_kwargs,
     ) -> None:
         if sensitivity_feature not in _SENSITIVITY_FEATURES:

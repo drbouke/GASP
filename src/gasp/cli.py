@@ -79,7 +79,7 @@ def main(argv: List[str] | None = None) -> int:
     d.add_argument("--k-chunks", type=int, default=5, dest="k_chunks")
     d.add_argument("--threshold", type=float, default=None)
     d.add_argument("--economical", action="store_true", help="two-pass variant, no attribution")
-    d.add_argument("--feature", default="max_drop", help="sensitivity feature to report")
+    d.add_argument("--feature", default="gap", help="sensitivity feature to report")
     d.add_argument("--max-ctx-tokens", type=int, default=1800, dest="max_ctx_tokens")
     d.add_argument("--max-ans-tokens", type=int, default=256, dest="max_ans_tokens")
     d.add_argument("--device", default=None, help="cpu or cuda")
