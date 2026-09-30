@@ -142,8 +142,8 @@ def main():
     print(f"{'method':30s} {'AUC':>5s} {'GFLOPs/resp':>12s} {'GFLOPs/sent':>12s} {'xGASP-gap-1.5B':>14s}")
     for name, auc, pr, ps, rel in rows:
         print(f"{name:30s} {auc:5.3f} {pr:12.1f} {ps:12.1f} {rel:13.1f}x")
-    print("\nReading: lower GFLOPs/sent is cheaper. Pair with AUC to read the value/cost frontier: "
-          "the two methods that beat GASP (MiniCheck-ctx, LLM-judge) are also the most expensive.")
+    print("\nReading: lower GFLOPs/sent is cheaper. Pair each method's cost with its own AUC to read "
+          "the value/cost frontier; the AUC column here is computed over all cases, not the test split.")
 
 
 if __name__ == "__main__":

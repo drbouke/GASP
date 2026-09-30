@@ -5,6 +5,11 @@ Figures are in `results/figures/`; the human study is in `results/human_study/`.
 span-level ROC-AUC under a leakage-clean, source-level 60/40 split with paired source-level
 bootstrap confidence intervals (2000 resamples). Regenerated on an NVIDIA L40S 48 GB.
 
+The paper reports the variants under descriptive names: GASP-threshold is "Gap (two-pass)",
+GASP-trained is "Sensitivity (trained)", GASP+base is "Sensitivity + baselines", and `+GASP` in the
+complementarity table is `+sens.`. The comparison of the sentence-level gap with its answer-level
+form is in `CONSENS_BASELINE.md`.
+
 ## Benchmark composition (canonical case set, 14B scorer)
 
 | Quantity | RAGTruth | TofuEval | RAGBench |
@@ -102,7 +107,8 @@ a state-of-the-art verifier.
 
 The two-pass GASP-threshold on a 1.5B scorer (~429) is the cheapest configuration, using only the
 full-context and no-context passes. Of the two verifiers that beat GASP+base, the LLM judge
-(~20,376) is far more expensive, but the full-context MiniCheck (~717) is cheaper than the 14B GASP+base (~4,236), since it trades
+(~20,376) is far more expensive, but the full-context MiniCheck (~717) is cheaper than the 14B GASP+base (~17,897) and than the
+two-pass gap on the 14B scorer (~4,236), since it trades
 a separately trained, supervised model for its accuracy, not more compute. ContextCite (~26,103) is the most expensive. Read each variant's cost with its
 own accuracy; do not pair the small-scorer cost with the larger-scorer accuracy. We report a
 compute estimate, not wall-clock latency.
