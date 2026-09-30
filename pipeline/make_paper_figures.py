@@ -5,7 +5,7 @@ Generate the paper figures into results/figures/.
 Four figures on RAGTruth with the 14B scorer:
   fig_feature_auc.png     single-feature span-level ROC-AUC of each grounding feature.
   fig_grounding_dist.png  distribution of the max leave-one-out drop, grounded vs unsupported.
-  fig_transfer.png        span-level GASP+base AUC across the three benchmarks.
+  fig_transfer.png        span-level AUC of Sensitivity + baselines across the three benchmarks.
   fig_cost_accuracy.png   compute (GFLOPs/sentence) vs span-level AUC per method.
 
 The distribution figure reads canon_results/<tag>/sentence.csv (produced by run_gasp.py);
@@ -29,18 +29,18 @@ plt.rcParams.update({"font.size": 11, "axes.grid": True, "grid.alpha": 0.25,
 FEATURES = [("gap", 0.745), ("top-2 drop", 0.711), ("max drop", 0.709), ("mean drop", 0.704),
             ("perplexity", 0.657), ("JSD no-ctx", 0.648), ("max JSD", 0.613)]
 GROUNDING = {"gap", "top-2 drop", "max drop", "mean drop", "JSD no-ctx", "max JSD"}
-# span-level GASP+base per benchmark
+# span-level AUC of Sensitivity + baselines per benchmark
 TRANSFER = [("RAGTruth", 0.773), ("TofuEval", 0.711), ("RAGBench", 0.634)]
-# (method, span-AUC, GFLOPs/sentence, is_gasp, label-dx-factor, label-dy)
+# (method, span-AUC, GFLOPs/sentence, is_sensitivity, label-dx-factor, label-dy)
 COST = [("chunk-NLI (max)", 0.721, 638, False, 1.10, +0.006),
         ("AlignScore (ctx)", 0.791, 608, False, 0.60, +0.006),
         ("MiniCheck (ctx)", 0.831, 717, False, 1.10, 0.0),
         ("MiniCheck (max)", 0.792, 645, False, 1.10, -0.010),
         ("LLM-judge (14B)", 0.853, 20376, False, 0.62, +0.006),
         ("ContextCite", 0.736, 26103, False, 0.42, -0.004),
-        ("GASP-gap (1.5B)", 0.717, 429, True, 1.12, -0.010),
-        ("GASP-gap (14B)", 0.745, 4236, True, 1.12, +0.004),
-        ("GASP-full (14B)", 0.773, 17897, True, 0.55, +0.007)]
+        ("Gap, two-pass (1.5B)", 0.717, 429, True, 1.12, -0.010),
+        ("Gap, two-pass (14B)", 0.745, 4236, True, 1.12, +0.004),
+        ("Sensitivity + baselines (14B)", 0.773, 17897, True, 0.40, +0.007)]
 
 
 def fig_feature_auc(out):
@@ -89,7 +89,7 @@ def fig_transfer(out):
         ax.text(xi, t[1] + 0.006, f"{t[1]:.3f}", ha="center", fontsize=10)
     ax.set_xticks(x); ax.set_xticklabels([t[0] for t in TRANSFER]); ax.set_ylim(0.5, 0.85)
     ax.axhline(0.5, color="k", lw=0.8, ls=":")
-    ax.set_ylabel("span-level ROC-AUC (GASP+base, 14B)")
+    ax.set_ylabel("span-level ROC-AUC\n(Sensitivity + baselines, 14B)")
     ax.set_title("Transfer across benchmarks")
     fig.tight_layout(); fig.savefig(os.path.join(out, "fig_transfer.png"), dpi=200); plt.close(fig)
 
@@ -104,7 +104,7 @@ def fig_cost_accuracy(out):
     ax.set_xscale("log"); ax.set_xlim(3e2, 6e4); ax.set_ylim(0.70, 0.87)
     ax.set_xlabel("compute per sentence (GFLOPs, log scale)")
     ax.set_ylabel("span-level ROC-AUC")
-    ax.set_title("Cost against accuracy on RAGTruth (GASP = navy diamonds)")
+    ax.set_title("Cost against accuracy on RAGTruth")
     fig.tight_layout(); fig.savefig(os.path.join(out, "fig_cost_accuracy.png"), dpi=200); plt.close(fig)
 
 
